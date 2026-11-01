@@ -1,0 +1,23 @@
+# Layers are indices into the hidden_states tuple (0 = embeddings, L = final block).
+# Candidate layers are depth fractions resolved per model; the chosen layer is
+# written to results/tables/selected_layers.json by scripts/run_layers.py.
+candidate_layer_fractions: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+
+models:
+  qwen2.5-3b:
+    hf_id: Qwen/Qwen2.5-3B-Instruct
+    role: primary
+    quantization: 4bit
+    trust_remote_code: false
+  olmo-2-1b:
+    # Unverified. Confirm the exact repository name on Hugging Face before use.
+    hf_id: allenai/OLMo-2-0425-1B-Instruct
+    verified: false
+    role: secondary
+    quantization: 4bit
+    trust_remote_code: false
+  moonlight-16b:
+    hf_id: moonshotai/Moonlight-16B-A3B-Instruct
+    role: secondary
+    quantization: 4bit
+    trust_remote_code: true
