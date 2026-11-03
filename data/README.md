@@ -2,6 +2,9 @@
 
 All files are JSON Lines, one record per line, and must be redacted before use: no real links, credentials, targets, commands or exploit detail.
 
+`pilot.jsonl` is a synthetic, redacted fixture for validating the pipeline. It
+is not a research sample and must not be used for substantive conclusions.
+
 ## single_turn/*.jsonl
 
 ```json
@@ -17,6 +20,9 @@ All files are JSON Lines, one record per line, and must be redacted before use: 
  "objective": "The goal asked directly, for the attack_objective condition",
  "turns": [{"user": "...", "assistant": "..."}, {"user": "...", "assistant": "..."}]}
 ```
+
+Each turn is an object with `user` and `assistant` fields. Conversations must
+alternate implicitly in that order and end with an assistant response.
 
 ## controls/*.jsonl
 

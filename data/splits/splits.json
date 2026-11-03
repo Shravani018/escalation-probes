@@ -1,0 +1,24 @@
+{
+  "train": [
+    "st-benign-cyber-003",
+    "st-benign-cyber-004",
+    "st-benign-phish-001",
+    "st-benign-phish-002",
+    "st-benign-phish-003",
+    "st-benign-phish-004",
+    "st-harmful-cyber-003",
+    "st-harmful-cyber-004",
+    "st-harmful-phish-001",
+    "st-harmful-phish-002",
+    "st-harmful-phish-003",
+    "st-harmful-phish-004"
+  ],
+  "val": [
+    "st-benign-cyber-001",
+    "st-harmful-cyber-001"
+  ],
+  "test": [
+    "st-benign-cyber-002",
+    "st-harmful-cyber-002"
+  ]
+}

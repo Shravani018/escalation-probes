@@ -1,6 +1,7 @@
 """Compare probe and judge on the same conversations: final-turn accuracy and earliest flagged turn."""
 
 import argparse
+import logging
 
 import pandas as pd
 
@@ -9,6 +10,8 @@ from escalation_probes.metrics import compare_methods, probe_turn_flags, summari
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    log = logging.getLogger(__name__)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default="configs/experiment.yaml")
     parser.add_argument("--model", required=True)
@@ -23,7 +26,8 @@ def main() -> None:
     comparison.to_csv(out / f"comparison_{args.model}.csv", index=False)
     summary = summarise(comparison)
     summary.to_csv(out / f"summary_{args.model}.csv", index=False)
-    print(summary.to_string(index=False))
+    log.info("Wrote comparison tables to %s", out)
+    log.info("Summary:\n%s", summary.to_string(index=False))
 
 
 if __name__ == "__main__":

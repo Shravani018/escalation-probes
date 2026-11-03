@@ -2,7 +2,10 @@
 
 import argparse
 import json
+import logging
 from pathlib import Path
+
+from tqdm import tqdm
 
 from escalation_probes.config import load_experiment, tables_dir
 from escalation_probes.data import load_dataset
@@ -29,6 +32,8 @@ def anthropic_backend(model: str, max_tokens: int):
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    log = logging.getLogger(__name__)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default="configs/experiment.yaml")
     args = parser.parse_args()
@@ -50,8 +55,9 @@ def main() -> None:
     path = tables_dir(cfg) / "judge_turns.jsonl"
     done = {(r["record_id"], r["turn"]) for r in map(json.loads, path.open())} if path.exists() else set()
     with path.open("a", encoding="utf-8") as handle:
-        for conv in conversations:
-            for turn in range(1, len(conv["turns"]) + 1):
+        total_turns = sum(len(conv["turns"]) for conv in conversations)
+        jobs = ((conv, turn) for conv in conversations for turn in range(1, len(conv["turns"]) + 1))
+        for conv, turn in tqdm(jobs, total=total_turns, desc="Scoring judge turns", unit="turn"):
                 if (conv["id"], turn) in done:
                     continue
                 row = judge.score_turn(conv["turns"], turn)
@@ -59,8 +65,9 @@ def main() -> None:
                 row.update(record_id=conv["id"], label=conv["label"], judge_model=settings["model"], prompt_sha256=digest)
                 handle.write(json.dumps(row) + "\n")
                 handle.flush()
-    print(f"judge turns in {path}; prompt sha256 {digest}")
-    print("Freeze the prompt by setting judge.prompt_sha256 to this value.")
+    log.info("Judge turns written to %s", path)
+    log.info("Prompt SHA-256: %s", digest)
+    log.info("Freeze this hash in configs/experiment.yaml before rerunning.")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,97 @@ Do safety probes trained on single-turn activations detect multi-turn escalation
 
 A pilot replication of the PCA and MLP probing analysis in Bullwinkel et al. (2025), moved from Llama-3-8B-Instruct to Qwen2.5-3B-Instruct, OLMo-2-1B-Instruct and Moonlight-16B-A3B-Instruct, and compared against an output-only LLM judge.
 
-**Status:** pipeline code and tests are in place. No data or results yet. This is a pilot for specific models and datasets, not a general claim about multi-turn jailbreaks.
+**Status:** the Qwen primary-model pilot has completed caching, PCA, layer selection, and probe evaluation. The repository has a synthetic redacted fixture dataset, schema validation, grouped splits, logging, progress bars, and 28 passing tests. This is a pipeline validation run, not evidence from a substantive research dataset.
+
+## Current project status
+
+```mermaid
+flowchart LR
+    A[Plan and literature review] --> B[Repository setup]
+    B --> C[Redacted fixture data]
+    C --> D[Validation and grouped splits]
+    D --> E[Qwen smoke test]
+    E -->     F[Activation cache<br/>104 / 104 files] --> G[Layer selection]
+    G --> H[PCA reference space]
+    H --> I[MLP and linear probes]
+    I --> J[Optional output-only judge]
+    J --> K[Comparison and report]
+
+    classDef done fill:#d1fae5,stroke:#059669,color:#064e3b;
+    classDef active fill:#fef3c7,stroke:#d97706,color:#78350f;
+    classDef next fill:#e5e7eb,stroke:#6b7280,color:#111827;
+    class A,B,C,D,E,F,G,H,I done;
+    class J active;
+    class K next;
+```
+
+### Completed
+
+- Read and incorporated the individual plan and core literature notes.
+- Added repository steering instructions in `.github/copilot-instructions.md`.
+- Installed the project in the local `.venv`.
+- Added synthetic, redacted pilot data for phishing/fraud and cyber intrusion:
+  16 single-turn records, 4 escalation conversations, and 4 matched controls.
+- Added schema, redaction, control-matching, and leakage checks.
+- Added deterministic grouped train/validation/test splits: 12/2/2 single-turn records.
+- Added progress bars and logging to all pipeline scripts.
+- Verified the test suite: **28 passed**.
+- Completed the Qwen model smoke test, activation cache, layer selection, PCA, and probe evaluation.
+
+### Current checkpoint
+
+- Primary model: `Qwen/Qwen2.5-3B-Instruct`
+- Loading mode: 4-bit quantization
+- Candidate layers: 6
+- Expected cache files: 104
+- Cached files currently present: 104
+- Generated tables: PCA variance, PCA centroids, single-turn probe results, multi-turn probe results, and selected layers
+- Cached arrays contain final response-token activations only; the redacted conversations remain readable in `data/`.
+
+### Preliminary Qwen fixture results
+
+These are pipeline checks on the synthetic fixture data, not research conclusions:
+
+- Selected layer: `11`; alternate layer: `18`.
+- Validation token accuracy was `1.00` for every candidate layer.
+- Selected-layer MLP test token accuracy: `0.907`; linear probe: `0.930`.
+- On the selected-layer MLP, all four escalation fixtures first crossed the 0.5 harmful-token threshold at turn 3.
+- Final full-history harmful-token shares were `0.95`, `1.00`, `0.95`, and `0.895` for the four escalation fixtures.
+- Three of four benign controls had zero harmful-token share at the final turn; one had `0.125`.
+- The first two PCA components explained `14.6%` at the selected layer and `15.9%` at the alternate layer.
+
+The fixture is intentionally small and synthetic; these numbers only confirm that the analysis stages produce outputs.
+
+### Qwen visualizations
+
+The full paper-style, step-by-step analysis is in [`notebooks/qwen_paper_replication_analysis.ipynb`](notebooks/qwen_paper_replication_analysis.ipynb). It reconstructs the PCA reference-space analysis, centroid geometry, harmful-token share versus `k`, per-turn detection, condition comparisons, controls, and layer sensitivity.
+
+The notebook writes these visualizations from the completed Qwen fixture tables:
+
+- [Harmful-token share by turn](results/figures/qwen_harmful_share_by_turn.png)
+- [PCA cumulative variance](results/figures/qwen_pca_variance.png)
+- [Final-turn harmful-token share](results/figures/qwen_final_turn_harmful_share.png)
+- [Paper-style PCA variance](results/figures/qwen_paper_pca_variance.png)
+- [Paper-style centroid geometry](results/figures/qwen_paper_single_turn_centroid_geometry.png)
+- [Paper-aligned Figure 1: full conversation vs attack objective](results/figures/qwen_paper_figure1_rq1_fc_vs_ao.png)
+- [Paper-aligned Figure 1: `k=1` vs `k>1`](results/figures/qwen_paper_figure1_rq2_k1_vs_kgt1.png)
+- [Paper-aligned Figure 2: MLP summary](results/figures/qwen_paper_figure2_mlp_summary.png)
+- [Paper-style harmful share by `k`](results/figures/qwen_paper_harmful_share_by_k.png)
+- [Paper-style per-turn detection](results/figures/qwen_paper_per_turn_detection.png)
+- [Paper-style condition comparison](results/figures/qwen_paper_condition_comparison.png)
+- [Paper-style layer sensitivity](results/figures/qwen_paper_layer_sensitivity.png)
+
+### Next commands
+
+After `run_cache.py` reaches 104 files, run:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_layers.py --model qwen2.5-3b
+.\.venv\Scripts\python.exe scripts\run_pca.py --model qwen2.5-3b
+.\.venv\Scripts\python.exe scripts\run_probe.py --model qwen2.5-3b
+```
+
+The external judge is optional and requires a separately configured API-backed model. OLMo and Moonlight are secondary models and are not required to complete the first Qwen pilot.
 
 ## Background
 
@@ -45,7 +135,7 @@ Splits are grouped by conversation. No test conversation contributes to PCA fitt
 | Model | Role | Hugging Face ID |
 |---|---|---|
 | Qwen2.5-3B-Instruct | Primary | `Qwen/Qwen2.5-3B-Instruct` |
-| OLMo-2-1B-Instruct | Secondary | verify before use |
+| OLMo-2-1B-Instruct | Secondary | `allenai/OLMo-2-0425-1B-Instruct` (verify before use) |
 | Moonlight-16B-A3B-Instruct | Secondary | `moonshotai/Moonlight-16B-A3B-Instruct` |
 
 Models load in 4-bit. Moonlight is a mixture-of-experts model that may need custom model code and more memory. It drops to a limited test if it does not run on the available hardware.

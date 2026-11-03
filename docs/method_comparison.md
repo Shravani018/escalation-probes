@@ -22,4 +22,3 @@ Target paper: Bullwinkel et al. (2025), arXiv:2507.02956. Every choice below is 
 | Attack success check | PyRIT scorer plus manual verification against written criteria | Written criteria, manual check, contingency if no unsafe output | |
 | Black-box baseline | None | Frozen LLM judge scoring escalation per turn | New in this project. |
 | Defense context | Circuit breakers | None | |
-
