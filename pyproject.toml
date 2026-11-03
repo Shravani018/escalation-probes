@@ -19,6 +19,7 @@ dependencies = [
     "pyyaml",
     "matplotlib",
     "tqdm",
+    "pyarrow",
 ]
 
 [project.optional-dependencies]

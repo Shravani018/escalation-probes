@@ -222,3 +222,7 @@ __marimo__/
 # Project outputs
 results/activations/*
 !results/activations/.gitkeep
+
+# Local public-source datasets and derived reference records
+data/source/
+data/single_turn_reference/

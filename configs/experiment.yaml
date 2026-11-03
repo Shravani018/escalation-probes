@@ -2,7 +2,7 @@ seed: 42
 categories: [phishing_fraud, cyber_intrusion]
 
 paths:
-  single_turn: data/single_turn
+  single_turn: data/single_turn_reference
   multi_turn: data/multi_turn
   controls: data/controls
   splits: data/splits/splits.json

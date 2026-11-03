@@ -33,10 +33,10 @@ flowchart LR
 - Read and incorporated the individual plan and core literature notes.
 - Added repository steering instructions in `.github/copilot-instructions.md`.
 - Installed the project in the local `.venv`.
-- Added synthetic, redacted pilot data for phishing/fraud and cyber intrusion:
-  16 single-turn records, 4 escalation conversations, and 4 matched controls.
+- Added a deterministic public-dataset reference set: 500 benign and 500 harmful single-turn records.
+- Kept the original synthetic fixture separately for tests and smoke checks.
 - Added schema, redaction, control-matching, and leakage checks.
-- Added deterministic grouped train/validation/test splits: 12/2/2 single-turn records.
+- Added deterministic grouped train/validation/test splits for the 1,000-record reference set.
 - Added progress bars and logging to all pipeline scripts.
 - Verified the test suite: **28 passed**.
 - Completed the Qwen model smoke test, activation cache, layer selection, PCA, and probe evaluation.
@@ -44,10 +44,12 @@ flowchart LR
 ### Current checkpoint
 
 - Primary model: `Qwen/Qwen2.5-3B-Instruct`
+- Reference set: 500 benign + 500 harmful public-dataset records
+- OLMo secondary model: `allenai/OLMo-2-0425-1B-Instruct` (verified in configuration)
 - Loading mode: 4-bit quantization
 - Candidate layers: 6
-- Expected cache files: 104
-- Cached files currently present: 104
+- Previous fixture cache: 104 files
+- Scaled reference cache: not yet generated
 - Generated tables: PCA variance, PCA centroids, single-turn probe results, multi-turn probe results, and selected layers
 - Cached arrays contain final response-token activations only; the redacted conversations remain readable in `data/`.
 
@@ -63,7 +65,9 @@ These are pipeline checks on the synthetic fixture data, not research conclusion
 - Three of four benign controls had zero harmful-token share at the final turn; one had `0.125`.
 - The first two PCA components explained `14.6%` at the selected layer and `15.9%` at the alternate layer.
 
-The fixture is intentionally small and synthetic; these numbers only confirm that the analysis stages produce outputs.
+The earlier fixture was intentionally small and synthetic; those numbers only confirmed that the analysis stages produce outputs. The scaled reference run must be regenerated from `run_cache.py` before interpreting new PCA or probe results.
+
+The local source files and derived 1,000-record reference set are excluded from Git because they may contain sensitive or unsafe text. Their provenance and deterministic conversion are recorded in `scripts/prepare_reference_data.py`.
 
 ### Qwen visualizations
 
@@ -135,7 +139,7 @@ Splits are grouped by conversation. No test conversation contributes to PCA fitt
 | Model | Role | Hugging Face ID |
 |---|---|---|
 | Qwen2.5-3B-Instruct | Primary | `Qwen/Qwen2.5-3B-Instruct` |
-| OLMo-2-1B-Instruct | Secondary | `allenai/OLMo-2-0425-1B-Instruct` (verify before use) |
+| OLMo-2-1B-Instruct | Secondary | `allenai/OLMo-2-0425-1B-Instruct`  |
 | Moonlight-16B-A3B-Instruct | Secondary | `moonshotai/Moonlight-16B-A3B-Instruct` |
 
 Models load in 4-bit. Moonlight is a mixture-of-experts model that may need custom model code and more memory. It drops to a limited test if it does not run on the available hardware.

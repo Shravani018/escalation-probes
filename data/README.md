@@ -5,13 +5,15 @@ All files are JSON Lines, one record per line, and must be redacted before use: 
 `pilot.jsonl` is a synthetic, redacted fixture for validating the pipeline. It
 is not a research sample and must not be used for substantive conclusions.
 
-## single_turn/*.jsonl
+## single_turn_reference/*.jsonl
 
 ```json
 {"id": "st-b-001", "label": "benign", "category": "phishing_fraud", "prompt": "...", "response": "..."}
 ```
 
-`label` is `benign` or `harmful`. `response` is the text whose tokens the probe reads. See open item 1 in `DECISIONS.md` for where harmful responses come from.
+`label` is `benign` or `harmful`. `response` is the text whose tokens the probe reads. The current configured reference set contains 500 benign and 500 harmful records sampled deterministically from the local public sources, with common links, emails, IP addresses, and code blocks redacted.
+
+The original 16-record fixture remains under `single_turn/` for tests and pipeline smoke checks; it is not included in the experiment config.
 
 ## multi_turn/*.jsonl
 

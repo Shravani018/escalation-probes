@@ -12,7 +12,7 @@ models:
   olmo-2-1b:
     # Unverified. Confirm the exact repository name on Hugging Face before use.
     hf_id: allenai/OLMo-2-0425-1B-Instruct
-    verified: false
+    verified: true
     role: secondary
     quantization: 4bit
     trust_remote_code: false
