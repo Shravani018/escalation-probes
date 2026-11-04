@@ -1,4 +1,4 @@
-"""Prepare a deterministic 500-benign/500-harmful reference set from local sources."""
+"""Prepare a deterministic 100-benign/100-harmful reference set from local sources."""
 
 import argparse
 import json
@@ -85,7 +85,7 @@ def main() -> None:
     parser.add_argument("--harmful", default="data/source/circuit_breakers_train.json")
     parser.add_argument("--benign", default="data/source/test_gen-00000-of-00001-3d4cd8309148a71f.parquet")
     parser.add_argument("--output", default="data/single_turn_reference")
-    parser.add_argument("--count", type=int, default=500)
+    parser.add_argument("--count", type=int, default=100)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 

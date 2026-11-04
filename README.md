@@ -44,7 +44,7 @@ flowchart LR
 ### Current checkpoint
 
 - Primary model: `Qwen/Qwen2.5-3B-Instruct`
-- Reference set: 500 benign + 500 harmful public-dataset records
+- Reference set: 100 benign + 100 harmful public-dataset records
 - OLMo secondary model: `allenai/OLMo-2-0425-1B-Instruct` (verified in configuration)
 - Loading mode: 4-bit quantization
 - Candidate layers: 6
@@ -65,7 +65,7 @@ These are pipeline checks on the synthetic fixture data, not research conclusion
 - Three of four benign controls had zero harmful-token share at the final turn; one had `0.125`.
 - The first two PCA components explained `14.6%` at the selected layer and `15.9%` at the alternate layer.
 
-The earlier fixture was intentionally small and synthetic; those numbers only confirmed that the analysis stages produce outputs. The scaled reference run must be regenerated from `run_cache.py` before interpreting new PCA or probe results.
+The earlier fixture was intentionally small and synthetic; those numbers only confirmed that the analysis stages produce outputs. The current 200-record reference run is a CPU-manageable pilot, not an exact replication of the paper's dataset size. Regenerate the cache from `run_cache.py` before interpreting new PCA or probe results.
 
 The local source files and derived 1,000-record reference set are excluded from Git because they may contain sensitive or unsafe text. Their provenance and deterministic conversion are recorded in `scripts/prepare_reference_data.py`.
 

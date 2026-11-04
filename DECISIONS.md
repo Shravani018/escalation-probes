@@ -36,6 +36,10 @@ A judge reply that cannot be parsed, including the instructed `UNABLE` reply, is
 
 Masked Responses is not implemented. Add it after the three main conditions run.
 
+## D11. CPU-manageable reference pilot
+
+The public reference set uses 100 benign and 100 harmful records. This keeps the first CPU-only run tractable while preserving balanced labels and the same grouped split procedure. It is a pilot for pipeline validation, not a claim of exact paper-scale replication.
+
 ## Open items
 
 1. **Source of harmful single-turn responses.** The probe needs response tokens for the harmful class. The paper used a circuit-breaker set with harmful completions. This repository does not generate unsafe completions. Options: use responses already present in a published dataset, use refusals as the harmful-prompt response (which makes the probe read refusal rather than harm), or use self-authored redacted completions. This choice changes what the probe measures and should be made before caching.
