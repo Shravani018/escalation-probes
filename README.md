@@ -4,7 +4,7 @@ Do safety probes trained on single-turn activations detect multi-turn escalation
 
 A pilot replication of the PCA and MLP probing analysis in Bullwinkel et al. (2025), moved from Llama-3-8B-Instruct to Qwen2.5-3B-Instruct, OLMo-2-1B-Instruct and Moonlight-16B-A3B-Instruct, and compared against an output-only LLM judge.
 
-**Status:** the Qwen primary-model pilot has completed caching, PCA, layer selection, and probe evaluation. The repository has a synthetic redacted fixture dataset, schema validation, grouped splits, logging, progress bars, and 28 passing tests. This is a pipeline validation run, not evidence from a substantive research dataset.
+**Status:** the Qwen primary-model pilot has completed caching, PCA, layer selection, probe evaluation, and notebook execution on the 200-record public-data pilot. This remains a method-validation run, not an exact replication of the paper's dataset size or source data.
 
 ## Current project status
 
@@ -14,7 +14,7 @@ flowchart LR
     B --> C[Redacted fixture data]
     C --> D[Validation and grouped splits]
     D --> E[Qwen smoke test]
-    E -->     F[Activation cache<br/>104 / 104 files] --> G[Layer selection]
+    E -->     F[Activation cache<br/>200-record pilot] --> G[Layer selection]
     G --> H[PCA reference space]
     H --> I[MLP and linear probes]
     I --> J[Optional output-only judge]
@@ -33,13 +33,13 @@ flowchart LR
 - Read and incorporated the individual plan and core literature notes.
 - Added repository steering instructions in `.github/copilot-instructions.md`.
 - Installed the project in the local `.venv`.
-- Added a deterministic public-dataset reference set: 500 benign and 500 harmful single-turn records.
+- Added a deterministic public-dataset reference set: 100 benign and 100 harmful single-turn records.
 - Kept the original synthetic fixture separately for tests and smoke checks.
 - Added schema, redaction, control-matching, and leakage checks.
-- Added deterministic grouped train/validation/test splits for the 1,000-record reference set.
+- Added deterministic grouped train/validation/test splits for the 200-record reference set.
 - Added progress bars and logging to all pipeline scripts.
 - Verified the test suite: **28 passed**.
-- Completed the Qwen model smoke test, activation cache, layer selection, PCA, and probe evaluation.
+- Completed the Qwen model smoke test, activation cache, layer selection, PCA, probe evaluation, and paper-style notebook execution.
 
 ### Current checkpoint
 
@@ -48,8 +48,8 @@ flowchart LR
 - OLMo secondary model: `allenai/OLMo-2-0425-1B-Instruct` (verified in configuration)
 - Loading mode: 4-bit quantization
 - Candidate layers: 6
-- Previous fixture cache: 104 files
-- Scaled reference cache: not yet generated
+- Previous fixture cache remains alongside the current cache
+- Current reference run: 200 records, split 140/30/30
 - Generated tables: PCA variance, PCA centroids, single-turn probe results, multi-turn probe results, and selected layers
 - Cached arrays contain final response-token activations only; the redacted conversations remain readable in `data/`.
 
@@ -67,7 +67,13 @@ These are pipeline checks on the synthetic fixture data, not research conclusion
 
 The earlier fixture was intentionally small and synthetic; those numbers only confirmed that the analysis stages produce outputs. The current 200-record reference run is a CPU-manageable pilot, not an exact replication of the paper's dataset size. Regenerate the cache from `run_cache.py` before interpreting new PCA or probe results.
 
-The local source files and derived 1,000-record reference set are excluded from Git because they may contain sensitive or unsafe text. Their provenance and deterministic conversion are recorded in `scripts/prepare_reference_data.py`.
+### Qwen pilot conclusion
+
+The Qwen2.5-3B probe learned a strong single-turn benign/harmful separation: selected-layer MLP test token accuracy was 94.2%. On the held-out multi-turn pilot, escalation conversations averaged 78.2% harmful-token share versus 49.6% for matched benign controls, while the direct Attack Objective control averaged 84.5%. The result supports the feasibility of the probe, but the control false-positive rate is too high to claim reliable escalation detection.
+
+**One takeaway:** the probe detects a broad harmfulness-related representation, but this pilot does not yet show that it isolates multi-turn escalation.
+
+The local source files and derived 200-record reference set are excluded from Git because they may contain sensitive or unsafe text. Their provenance and deterministic conversion are recorded in `scripts/prepare_reference_data.py`.
 
 ### Qwen visualizations
 
@@ -90,7 +96,7 @@ The notebook writes these visualizations from the completed Qwen fixture tables:
 
 ### Next commands
 
-After `run_cache.py` reaches 104 files, run:
+After `run_cache.py` completes the current reference run, run:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\run_layers.py --model qwen2.5-3b

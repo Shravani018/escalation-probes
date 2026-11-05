@@ -226,3 +226,8 @@ results/activations/*
 # Local public-source datasets and derived reference records
 data/source/
 data/single_turn_reference/
+
+# Local methodological notes
+DECISIONS.md
+
+qwen_run.txt

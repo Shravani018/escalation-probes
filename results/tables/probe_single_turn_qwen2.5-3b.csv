@@ -1,9 +1,9 @@
 model,probe_kind,layer_role,layer,split,token_accuracy,example_accuracy
-qwen2.5-3b,mlp,selected,11,val,1.0,1.0
-qwen2.5-3b,mlp,selected,11,test,0.9069767441860465,1.0
-qwen2.5-3b,linear,selected,11,val,1.0,1.0
-qwen2.5-3b,linear,selected,11,test,0.9302325581395349,1.0
-qwen2.5-3b,mlp,alternate,18,val,1.0,1.0
-qwen2.5-3b,mlp,alternate,18,test,0.9534883720930233,1.0
-qwen2.5-3b,linear,alternate,18,val,1.0,1.0
-qwen2.5-3b,linear,alternate,18,test,0.9534883720930233,1.0
+qwen2.5-3b,mlp,selected,25,val,0.9577140223528057,0.9666666666666667
+qwen2.5-3b,mlp,selected,25,test,0.9421353773075677,0.9666666666666667
+qwen2.5-3b,linear,selected,25,val,0.9626685101970273,1.0
+qwen2.5-3b,linear,selected,25,test,0.9498002806866026,1.0
+qwen2.5-3b,mlp,alternate,18,val,0.9402004839267196,0.9666666666666667
+qwen2.5-3b,mlp,alternate,18,test,0.9144985425887941,0.9666666666666667
+qwen2.5-3b,linear,alternate,18,val,0.9408918078119599,0.9666666666666667
+qwen2.5-3b,linear,alternate,18,test,0.9094245924646442,0.9666666666666667
