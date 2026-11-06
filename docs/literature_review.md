@@ -41,7 +41,7 @@ Works cited inside these papers are listed in section 6 and have not been read. 
 - The paper supplies the single-turn direction the project asks about, and shows a single-turn jailbreak can work by suppressing it at one token position.
 - It never tests multi-turn conversations. The Week 1 question, whether a single-turn refusal direction misses gradual escalation, has no direct answer here.
 - It reads activations at post-instruction positions, the decision point before a reply. The target paper reads response tokens. The two readouts are not interchangeable.
-- Qwen Chat models appear, but not Qwen2.5, OLMo-2 or Moonlight.
+- Qwen Chat models appear, but not Qwen2.5, OLMo-2 or Gemma 3.
 - Tooling: TransformerLens for exploration, and HuggingFace Transformers, PyTorch and vLLM for the pipeline. Code is at github.com/andyrdt/refusal_direction.
 
 ## 3. Bullwinkel et al. (2025), the target paper

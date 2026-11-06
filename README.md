@@ -2,9 +2,9 @@
 
 Do safety probes trained on single-turn activations detect multi-turn escalation?
 
-A pilot replication of the PCA and MLP probing analysis in Bullwinkel et al. (2025), moved from Llama-3-8B-Instruct to Qwen2.5-3B-Instruct, OLMo-2-1B-Instruct and Moonlight-16B-A3B-Instruct, and compared against an output-only LLM judge.
+A method-faithful pilot replication of the PCA and MLP probing analysis in Bullwinkel et al. (2025), evaluated across Qwen2.5-3B-Instruct, OLMo-2-1B-Instruct, and Gemma 3 1B IT, with an optional output-only LLM judge.
 
-**Status:** the Qwen primary-model pilot has completed caching, PCA, layer selection, probe evaluation, and notebook execution on the 200-record public-data pilot. This remains a method-validation run, not an exact replication of the paper's dataset size or source data.
+**Status:** the Qwen pilot is complete on a balanced 200-record public-data pilot. OLMo and Gemma are configured as secondary comparisons and have not yet been run. This is method validation, not an exact replication of the paper's dataset size or source data.
 
 ## Current project status
 
@@ -45,7 +45,7 @@ flowchart LR
 
 - Primary model: `Qwen/Qwen2.5-3B-Instruct`
 - Reference set: 100 benign + 100 harmful public-dataset records
-- OLMo secondary model: `allenai/OLMo-2-0425-1B-Instruct` (verified in configuration)
+- Secondary models: `allenai/OLMo-2-0425-1B-Instruct` and `google/gemma-3-1b-it`
 - Loading mode: 4-bit quantization
 - Candidate layers: 6
 - Previous fixture cache remains alongside the current cache
@@ -104,7 +104,7 @@ After `run_cache.py` completes the current reference run, run:
 .\.venv\Scripts\python.exe scripts\run_probe.py --model qwen2.5-3b
 ```
 
-The external judge is optional and requires a separately configured API-backed model. OLMo and Moonlight are secondary models and are not required to complete the first Qwen pilot.
+The external judge is optional and requires a separately configured API-backed model. OLMo and Gemma are secondary comparisons.
 
 ## Background
 
@@ -112,7 +112,7 @@ Crescendo (Russinovich et al., 2024) escalates a conversation through individual
 
 ## Research questions
 
-1. Does the benign-region pattern appear in Qwen2.5-3B-Instruct, with OLMo-2-1B-Instruct and Moonlight-16B-A3B-Instruct as secondary tests?
+1. Does the benign-region pattern appear across Qwen2.5-3B-Instruct, OLMo-2-1B-Instruct, and Gemma 3 1B IT?
 2. Does an MLP probe trained only on single-turn activations detect harmful multi-turn states?
 3. Does the internal probe add anything over a black-box judge that reads only the conversation, in accuracy and in how early it flags escalation?
 
@@ -144,18 +144,18 @@ Splits are grouped by conversation. No test conversation contributes to PCA fitt
 
 | Model | Role | Hugging Face ID |
 |---|---|---|
-| Qwen2.5-3B-Instruct | Primary | `Qwen/Qwen2.5-3B-Instruct` |
-| OLMo-2-1B-Instruct | Secondary | `allenai/OLMo-2-0425-1B-Instruct`  |
-| Moonlight-16B-A3B-Instruct | Secondary | `moonshotai/Moonlight-16B-A3B-Instruct` |
+| Qwen2.5-3B-Instruct | Primary · 2024 | `Qwen/Qwen2.5-3B-Instruct` |
+| OLMo-2-1B-Instruct | Secondary · 2025 | `allenai/OLMo-2-0425-1B-Instruct` |
+| Gemma 3 1B IT | Secondary · 2025 | `google/gemma-3-1b-it` |
 
-Models load in 4-bit. Moonlight is a mixture-of-experts model that may need custom model code and more memory. It drops to a limited test if it does not run on the available hardware.
+All models load in 4-bit. The secondary models are intentionally small enough for the local CPU workflow, although caching remains the slowest stage.
 
 ## Repository layout
 
 ```
 escalation-probes/
 ├── README.md
-├── DECISIONS.md              # every design choice and its reason
+├── DECISIONS.md              # local methodological notes (Git-ignored)
 ├── pyproject.toml
 ├── configs/
 │   ├── models.yaml           # model IDs, layers, quantization
@@ -219,6 +219,14 @@ python scripts/run_cache.py   --model qwen2.5-3b
 python scripts/run_layers.py  --model qwen2.5-3b
 python scripts/run_pca.py     --model qwen2.5-3b
 python scripts/run_probe.py   --model qwen2.5-3b
+python scripts/run_cache.py   --model olmo-2-1b
+python scripts/run_layers.py  --model olmo-2-1b
+python scripts/run_pca.py     --model olmo-2-1b
+python scripts/run_probe.py   --model olmo-2-1b
+python scripts/run_cache.py   --model gemma-3-1b
+python scripts/run_layers.py  --model gemma-3-1b
+python scripts/run_pca.py     --model gemma-3-1b
+python scripts/run_probe.py   --model gemma-3-1b
 python scripts/run_judge.py
 python scripts/run_compare.py --model qwen2.5-3b
 ```
@@ -231,7 +239,7 @@ Layer selection runs before PCA because PCA needs a layer (see `DECISIONS.md`, D
 - Prewritten conversations do not adapt to model replies, unlike automated Crescendo.
 - A probe trained on benign versus harmful data may separate content type rather than harmfulness, a limit the target paper also notes.
 - Probes and the judge are evaluated on the same conversations, so conclusions hold for this dataset only.
-- Smaller models may refuse differently from Llama-3-8B-Instruct, which limits direct comparison with the original paper.
+- Smaller models and different chat templates may refuse differently from Llama-3-8B-Instruct, which limits direct comparison with the original paper.
 
 ## References
 
