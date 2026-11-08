@@ -21,3 +21,9 @@ models:
     role: secondary
     quantization: 4bit
     trust_remote_code: false
+  smollm2-1.7b:
+    hf_id: HuggingFaceTB/SmolLM2-1.7B-Instruct
+    verified: true
+    role: secondary
+    quantization: 4bit
+    trust_remote_code: false

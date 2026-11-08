@@ -4,7 +4,7 @@ Target paper: Bullwinkel et al. (2025), arXiv:2507.02956. Every choice below is 
 
 | Item | Bullwinkel et al. (2025) | This project | Note |
 |---|---|---|---|
-| Models | Llama-3-8B-Instruct, and Llama-3-8B-Instruct-RR (circuit breakers) | Qwen2.5-3B-Instruct (primary), OLMo-2-1B-Instruct, Gemma 3 1B IT | No circuit-breaker variants here. The original Llama result is the reference. |
+| Models | Llama-3-8B-Instruct, and Llama-3-8B-Instruct-RR (circuit breakers) | Qwen2.5-3B-Instruct (primary), OLMo-2-1B-Instruct, SmolLM2-1.7B-Instruct | No circuit-breaker variants here. The original Llama result is the reference. |
 | Layer | 31 (original), 20 (circuit-breaker model) | Chosen on single-turn validation, plus one alternate layer | Never use multi-turn data to pick a layer. |
 | Token position | All tokens of the final response r_n | Same | Teacher-forced final response, identical tokens across k. |
 | Context variable | k = last k prompt-response pairs, k = 1 to n | Same | |

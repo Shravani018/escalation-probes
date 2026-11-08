@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+from pathlib import Path
 
 import numpy as np
 from tqdm import tqdm
@@ -13,13 +14,23 @@ from escalation_probes.models import candidate_layers, load_model
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    log = logging.getLogger(__name__)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default="configs/experiment.yaml")
     parser.add_argument("--models-config", default="configs/models.yaml")
     parser.add_argument("--model", required=True)
+    parser.add_argument("--log-file", type=Path, help="Write structured logs to this file.")
     args = parser.parse_args()
+
+    handlers: list[logging.Handler] = [logging.StreamHandler()]
+    if args.log_file is not None:
+        args.log_file.parent.mkdir(parents=True, exist_ok=True)
+        handlers.append(logging.FileHandler(args.log_file, encoding="utf-8"))
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+        handlers=handlers,
+    )
+    log = logging.getLogger(__name__)
 
     cfg = load_experiment(args.config)
     single, conversations = load_dataset(cfg)

@@ -2,9 +2,9 @@
 
 Do safety probes trained on single-turn activations detect multi-turn escalation?
 
-A method-faithful pilot replication of the PCA and MLP probing analysis in Bullwinkel et al. (2025), evaluated across Qwen2.5-3B-Instruct, OLMo-2-1B-Instruct, and Gemma 3 1B IT, with an optional output-only LLM judge.
+A method-faithful pilot replication of the PCA and MLP probing analysis in Bullwinkel et al. (2025), evaluated across Qwen2.5-3B-Instruct, OLMo-2-1B-Instruct, and SmolLM2-1.7B-Instruct, with an optional output-only LLM judge.
 
-**Status:** the Qwen pilot is complete on a balanced 200-record public-data pilot. OLMo and Gemma are configured as secondary comparisons and have not yet been run. This is method validation, not an exact replication of the paper's dataset size or source data.
+**Status:** the Qwen pilot is complete on a balanced 200-record public-data pilot. OLMo and SmolLM2 are configured as secondary comparisons and have not yet been run. This is method validation, not an exact replication of the paper's dataset size or source data.
 
 ## Current project status
 
@@ -45,7 +45,7 @@ flowchart LR
 
 - Primary model: `Qwen/Qwen2.5-3B-Instruct`
 - Reference set: 100 benign + 100 harmful public-dataset records
-- Secondary models: `allenai/OLMo-2-0425-1B-Instruct` and `google/gemma-3-1b-it`
+- Secondary models: `allenai/OLMo-2-0425-1B-Instruct` and `HuggingFaceTB/SmolLM2-1.7B-Instruct`
 - Loading mode: 4-bit quantization
 - Candidate layers: 6
 - Previous fixture cache remains alongside the current cache
@@ -104,7 +104,7 @@ After `run_cache.py` completes the current reference run, run:
 .\.venv\Scripts\python.exe scripts\run_probe.py --model qwen2.5-3b
 ```
 
-The external judge is optional and requires a separately configured API-backed model. OLMo and Gemma are secondary comparisons.
+The external judge is optional and requires a separately configured API-backed model. OLMo and SmolLM2 are secondary comparisons.
 
 ## Background
 
@@ -112,7 +112,7 @@ Crescendo (Russinovich et al., 2024) escalates a conversation through individual
 
 ## Research questions
 
-1. Does the benign-region pattern appear across Qwen2.5-3B-Instruct, OLMo-2-1B-Instruct, and Gemma 3 1B IT?
+1. Does the benign-region pattern appear across Qwen2.5-3B-Instruct, OLMo-2-1B-Instruct, and SmolLM2-1.7B-Instruct?
 2. Does an MLP probe trained only on single-turn activations detect harmful multi-turn states?
 3. Does the internal probe add anything over a black-box judge that reads only the conversation, in accuracy and in how early it flags escalation?
 
@@ -146,7 +146,7 @@ Splits are grouped by conversation. No test conversation contributes to PCA fitt
 |---|---|---|
 | Qwen2.5-3B-Instruct | Primary · 2024 | `Qwen/Qwen2.5-3B-Instruct` |
 | OLMo-2-1B-Instruct | Secondary · 2025 | `allenai/OLMo-2-0425-1B-Instruct` |
-| Gemma 3 1B IT | Secondary · 2025 | `google/gemma-3-1b-it` |
+| SmolLM2-1.7B-Instruct | Secondary · 2024 | `HuggingFaceTB/SmolLM2-1.7B-Instruct` |
 
 All models load in 4-bit. The secondary models are intentionally small enough for the local CPU workflow, although caching remains the slowest stage.
 
@@ -215,18 +215,18 @@ The scripts are planned and run in this order:
 
 ```
 python scripts/make_splits.py
-python scripts/run_cache.py   --model qwen2.5-3b
+.\.venv\Scripts\python.exe scripts\run_cache.py --model qwen2.5-3b --log-file qwen_run.txt
 python scripts/run_layers.py  --model qwen2.5-3b
 python scripts/run_pca.py     --model qwen2.5-3b
 python scripts/run_probe.py   --model qwen2.5-3b
-python scripts/run_cache.py   --model olmo-2-1b
+.\.venv\Scripts\python.exe scripts\run_cache.py --model olmo-2-1b --log-file olmo_run.txt
 python scripts/run_layers.py  --model olmo-2-1b
 python scripts/run_pca.py     --model olmo-2-1b
 python scripts/run_probe.py   --model olmo-2-1b
-python scripts/run_cache.py   --model gemma-3-1b
-python scripts/run_layers.py  --model gemma-3-1b
-python scripts/run_pca.py     --model gemma-3-1b
-python scripts/run_probe.py   --model gemma-3-1b
+.\.venv\Scripts\python.exe scripts\run_cache.py --model smollm2-1.7b --log-file smollm2_run.txt
+.\.venv\Scripts\python.exe scripts\run_layers.py --model smollm2-1.7b
+.\.venv\Scripts\python.exe scripts\run_pca.py --model smollm2-1.7b
+.\.venv\Scripts\python.exe scripts\run_probe.py --model smollm2-1.7b
 python scripts/run_judge.py
 python scripts/run_compare.py --model qwen2.5-3b
 ```
