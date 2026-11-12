@@ -4,7 +4,7 @@ Do safety probes trained on single-turn activations detect multi-turn escalation
 
 A method-faithful pilot replication of the PCA and MLP probing analysis in Bullwinkel et al. (2025), evaluated across Qwen2.5-3B-Instruct, OLMo-2-1B-Instruct, and SmolLM2-1.7B-Instruct, with an optional output-only LLM judge.
 
-**Status:** the activation-cache, layer-selection, PCA, probe, local judge, and model-comparison stages are complete for Qwen, OLMo, and SmolLM2 on the balanced 200-record public-data pilot. The all-models analysis notebook is also complete. This is method validation, not an exact replication of the paper's dataset size or source data.
+**Status:** the single-turn pipeline (activation cache, layer selection, PCA, probes) is complete for Qwen, OLMo and SmolLM2. Round one of the multi-turn test used hand-written refusal replies, so it cannot test the paper's central claim and is kept as pilot evidence only. Round two (`data/prompts_v2`, 50 escalation and 50 matched control conversations with real Qwen replies, plus a free hosted judge) replaces it. This is method validation under a local compute budget, not an exact replication.
 
 ## Current project status
 
@@ -53,7 +53,7 @@ flowchart LR
 - Generated tables: PCA variance, PCA centroids, single-turn probe results, multi-turn probe results, and selected layers
 - Cached arrays contain final response-token activations only; the redacted conversations remain readable in `data/`.
 
-### Final pilot results
+### Round-one pilot results (hand-written refusal replies)
 
 The table reports selected-layer MLP performance on held-out single-turn tokens and conversation-level final-flag accuracy on the eight multi-turn conversations (four escalations and four matched controls). Judge accuracy is the same text-only judge for every model; `n=8` is the number of conversations, not the number of single-turn records.
 
@@ -69,7 +69,7 @@ Selected-layer PCA cumulative variance after two components was 7.3% for Qwen, 7
 
 | Planned component | Status | Evidence |
 |---|---|---|
-| Three-model comparison | Complete with documented substitution | Qwen, OLMo, and SmolLM2 cache, layer, PCA, and probe tables; SmolLM2 replaces the gated/unavailable Moonlight comparison |
+| Three-model comparison | Complete with documented substitution | Qwen, OLMo, and SmolLM2 cache, layer, PCA, and probe tables; SmolLM2 replaces Moonlight-16B-A3B, which exceeds the local compute budget |
 | Single-turn grouped train/validation/test evaluation | Complete | 200 records, split 140/30/30, with leakage checks |
 | Multi-turn escalation and matched controls | Complete | 4 escalation conversations plus 4 controls, four turns each |
 | PCA reference space and centroid analysis | Complete | `pca_variance_*.csv`, `pca_centroids_*.csv`, notebook Figures 2 and 7 |
@@ -80,7 +80,7 @@ Selected-layer PCA cumulative variance after two components was 7.3% for Qwen, 7
 | Rerun weak or ambiguous cases | Not performed | Results are locked as an exploratory pilot; no additional seeds or adaptive conversations were run |
 | Final presentation and blog | Not in repository | Required by the individual plan but remains a writing deliverable |
 
-The core analysis is complete. Remaining work is interpretation, review of ambiguous cases, and the presentation/blog deliverables—not another required model run. The pilot is limited by four escalation conversations, four controls, prewritten rather than adaptive turns, and a local supplementary judge. It does not support broad claims of generalization or robustness.
+The round-one analysis is complete. Round two (below) is the remaining model run, followed by the write-up, presentation and blog. The pilot is limited by four escalation conversations, four controls, prewritten rather than adaptive turns, and a local supplementary judge. It does not support broad claims of generalization or robustness.
 
 ### Judge prompts and inputs
 
@@ -92,20 +92,6 @@ The judge prompts are:
 - `prompts/judge_v1_review.md`: second-pass verdict review instructions.
 
 Judge outputs are written to `results/tables/judge_turns.jsonl`. The judge does not read PCA files, probe activations, or single-turn reference records.
-
-### Preliminary Qwen fixture results
-
-These are pipeline checks on the synthetic fixture data, not research conclusions:
-
-- Selected layer: `11`; alternate layer: `18`.
-- Validation token accuracy was `1.00` for every candidate layer.
-- Selected-layer MLP test token accuracy: `0.907`; linear probe: `0.930`.
-- On the selected-layer MLP, all four escalation fixtures first crossed the 0.5 harmful-token threshold at turn 3.
-- Final full-history harmful-token shares were `0.95`, `1.00`, `0.95`, and `0.895` for the four escalation fixtures.
-- Three of four benign controls had zero harmful-token share at the final turn; one had `0.125`.
-- The first two PCA components explained `14.6%` at the selected layer and `15.9%` at the alternate layer.
-
-The earlier fixture was intentionally small and synthetic; those numbers only confirmed that the analysis stages produce outputs. The current 200-record reference run is a CPU-manageable pilot, not an exact replication of the paper's dataset size. Regenerate the cache from `run_cache.py` before interpreting new PCA or probe results.
 
 ### Qwen pilot conclusion
 
@@ -147,6 +133,29 @@ After `run_cache.py` completes the current reference run, run:
 The text-only judge used the locally configured Ollama model `llama3.2:3b`.
 
 The all-models paper-style analysis notebook is [`notebooks/all_models_paper_analysis.ipynb`](notebooks/all_models_paper_analysis.ipynb). It produces indexed figures for single-turn accuracy, PCA variance and scatter geometry, context length, per-turn and category trajectories, condition/layer sensitivity, and probe-versus-judge comparison.
+
+## Round two: real replies and a free judge
+
+Round one showed that hand-written refusals give the probe nothing to detect. Round two generates the replies.
+
+```
+python scripts/build_prompts.py                                  # writes data/prompts_v2 (50 + 50 user-turn sets)
+python scripts/generate_replies.py --model qwen2.5-3b            # free generation, greedy, resumable
+python scripts/label_outputs.py                                  # manual refused / partial / complied check
+python scripts/run_cache.py --model qwen2.5-3b                   # single-turn files are skipped
+python scripts/run_pca.py --model qwen2.5-3b
+python scripts/run_probe.py --model qwen2.5-3b
+mv results/tables/judge_turns.jsonl results/tables/judge_turns_llama3b.jsonl
+python scripts/run_judge.py                                      # needs GROQ_API_KEY, see configs/experiment.yaml
+python scripts/run_compare.py --model qwen2.5-3b
+```
+
+`run_layers.py` is not rerun: layers depend on single-turn validation data only and stay at the values in `selected_layers.json`.
+Generated conversations and labels are git-ignored because they may contain unsafe text. If the labels show no partial or complied replies, report the study as a representation-monitoring pilot without a jailbreak claim.
+
+## AI assistance
+
+Claude was used for timeline generation, for drafting the round-two prompt templates and scripts, and for code review. GitHub Copilot steering instructions were used during repository setup. All results come from the code in this repository.
 
 ## Background
 
@@ -232,7 +241,8 @@ escalation-probes/
 │   ├── test_data.py
 │   └── test_analysis.py
 ├── notebooks/
-│   └── analysis.ipynb        # final figures from cached results
+│   ├── all_models_paper_analysis.ipynb
+│   └── qwen_paper_replication_analysis.ipynb
 ├── results/
 │   ├── activations/          # git-ignored
 │   ├── tables/

@@ -227,6 +227,11 @@ results/activations/*
 data/source/
 data/single_turn_reference/
 
+# Generated model replies may contain unsafe text
+data/multi_turn_gen/
+data/controls_gen/
+data/output_labels.csv
+
 # Local methodological notes
 DECISIONS.md
 

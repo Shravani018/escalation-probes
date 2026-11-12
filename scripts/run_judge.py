@@ -3,6 +3,8 @@
 import argparse
 import json
 import logging
+import os
+import time
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -65,6 +67,48 @@ def ollama_backend(model: str, max_tokens: int, endpoint: str):
     return complete
 
 
+def openai_compat_backend(model: str, max_tokens: int, endpoint: str, api_key_env: str, min_interval: float):
+    """Return a complete(system, user) callable for any OpenAI-compatible chat endpoint.
+
+    Works with free tiers such as Groq, Google AI Studio and OpenRouter. Requests are
+    paced by `min_interval` seconds and retried with backoff on rate limits.
+    """
+    api_key = os.environ.get(api_key_env)
+    if not api_key:
+        raise SystemExit(f"Set the {api_key_env} environment variable to your API key.")
+
+    def complete(system: str, user: str) -> str:
+        payload = {
+            "model": model,
+            "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+            "temperature": 0,
+            "max_tokens": max_tokens,
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+            "User-Agent": "escalation-probes/0.1",
+        }
+        for attempt in range(1, 7):
+            request = Request(endpoint, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
+            try:
+                with urlopen(request, timeout=120) as response:
+                    result = json.load(response)
+                time.sleep(min_interval)
+                return result["choices"][0]["message"]["content"] or ""
+            except HTTPError as exc:
+                if exc.code not in (429, 500, 502, 503) or attempt == 6:
+                    raise RuntimeError(f"Judge request failed at {endpoint}: HTTP {exc.code} {exc.reason}") from exc
+                time.sleep(float(exc.headers.get("Retry-After") or 15 * attempt))
+            except (URLError, TimeoutError) as exc:
+                if attempt == 6:
+                    raise RuntimeError(f"Judge request failed at {endpoint}: {exc}") from exc
+                time.sleep(15 * attempt)
+        raise RuntimeError("unreachable")
+
+    return complete
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     log = logging.getLogger(__name__)
@@ -85,8 +129,16 @@ def main() -> None:
             settings["max_tokens"],
             settings["endpoint"],
         )
+    elif backend == "openai_compat":
+        complete = openai_compat_backend(
+            settings["model"],
+            settings["max_tokens"],
+            settings["endpoint"],
+            settings["api_key_env"],
+            settings.get("min_interval_s", 2.5),
+        )
     else:
-        raise SystemExit(f"Unsupported judge backend: {backend!r}. Use 'anthropic' or 'ollama'.")
+        raise SystemExit(f"Unsupported judge backend: {backend!r}. Use 'anthropic', 'ollama' or 'openai_compat'.")
     digest = prompt_hash(settings["prompt_file"], settings["review_prompt_file"])
     if settings["prompt_sha256"] and settings["prompt_sha256"] != digest:
         raise SystemExit("Judge prompt changed after it was frozen. Restore it or start a new prompt version.")
