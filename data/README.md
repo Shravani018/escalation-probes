@@ -11,7 +11,7 @@ is not a research sample and must not be used for substantive conclusions.
 {"id": "st-b-001", "label": "benign", "category": "phishing_fraud", "prompt": "...", "response": "..."}
 ```
 
-`label` is `benign` or `harmful`. `response` is the text whose tokens the probe reads. The current configured reference set contains 500 benign and 500 harmful records sampled deterministically from the local public sources, with common links, emails, IP addresses, and code blocks redacted.
+`label` is `benign` or `harmful`. `response` is the text whose tokens the probe reads. The current configured reference set contains 100 benign and 100 harmful records, 200 total, sampled deterministically from the local public sources, with common links, emails, IP addresses, and code blocks redacted.
 
 The original 16-record fixture remains under `single_turn/` for tests and pipeline smoke checks; it is not included in the experiment config.
 

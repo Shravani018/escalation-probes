@@ -4,7 +4,7 @@ Do safety probes trained on single-turn activations detect multi-turn escalation
 
 A method-faithful pilot replication of the PCA and MLP probing analysis in Bullwinkel et al. (2025), evaluated across Qwen2.5-3B-Instruct, OLMo-2-1B-Instruct, and SmolLM2-1.7B-Instruct, with an optional output-only LLM judge.
 
-**Status:** the Qwen pilot is complete on a balanced 200-record public-data pilot. OLMo and SmolLM2 are configured as secondary comparisons and have not yet been run. This is method validation, not an exact replication of the paper's dataset size or source data.
+**Status:** the activation-cache, layer-selection, PCA, probe, local judge, and model-comparison stages are complete for Qwen, OLMo, and SmolLM2 on the balanced 200-record public-data pilot. The all-models analysis notebook is also complete. This is method validation, not an exact replication of the paper's dataset size or source data.
 
 ## Current project status
 
@@ -16,16 +16,14 @@ flowchart LR
     D --> E[Qwen smoke test]
     E -->     F[Activation cache<br/>200-record pilot] --> G[Layer selection]
     G --> H[PCA reference space]
-    H --> I[MLP and linear probes]
+    H -->     I[MLP and linear probes]
     I --> J[Optional output-only judge]
     J --> K[Comparison and report]
 
     classDef done fill:#d1fae5,stroke:#059669,color:#064e3b;
     classDef active fill:#fef3c7,stroke:#d97706,color:#78350f;
     classDef next fill:#e5e7eb,stroke:#6b7280,color:#111827;
-    class A,B,C,D,E,F,G,H,I done;
-    class J active;
-    class K next;
+    class A,B,C,D,E,F,G,H,I,J,K done;
 ```
 
 ### Completed
@@ -39,19 +37,61 @@ flowchart LR
 - Added deterministic grouped train/validation/test splits for the 200-record reference set.
 - Added progress bars and logging to all pipeline scripts.
 - Verified the test suite: **28 passed**.
-- Completed the Qwen model smoke test, activation cache, layer selection, PCA, probe evaluation, and paper-style notebook execution.
+- Completed the Qwen, OLMo, and SmolLM2 activation caches, layer selection, PCA, and probe evaluation.
+- Completed the 32-row local Ollama judge run and probe-versus-judge comparisons for all three models.
+- Added and executed the all-models paper-style notebook with labeled PCA, trajectory, condition, layer, and judge-comparison figures.
 
 ### Current checkpoint
 
 - Primary model: `Qwen/Qwen2.5-3B-Instruct`
-- Reference set: 100 benign + 100 harmful public-dataset records
+- Reference set: 200 records: 100 benign + 100 harmful public-dataset records
 - Secondary models: `allenai/OLMo-2-0425-1B-Instruct` and `HuggingFaceTB/SmolLM2-1.7B-Instruct`
 - Loading mode: 4-bit quantization
 - Candidate layers: 6
 - Previous fixture cache remains alongside the current cache
-- Current reference run: 200 records, split 140/30/30
+- Current reference run: 200 records, split 140/30/30, completed for all three models
 - Generated tables: PCA variance, PCA centroids, single-turn probe results, multi-turn probe results, and selected layers
 - Cached arrays contain final response-token activations only; the redacted conversations remain readable in `data/`.
+
+### Final pilot results
+
+The table reports selected-layer MLP performance on held-out single-turn tokens and conversation-level final-flag accuracy on the eight multi-turn conversations (four escalations and four matched controls). Judge accuracy is the same text-only judge for every model; `n=8` is the number of conversations, not the number of single-turn records.
+
+| Model | Selected / alternate layer | MLP test token accuracy | MLP test example accuracy | Probe conversation accuracy | Judge accuracy | Judge scored |
+|---|---:|---:|---:|---:|---:|---:|
+| Qwen2.5-3B-Instruct | 25 / 18 | 94.2% | 96.7% | 75.0% | 37.5% | 8/8 |
+| OLMo-2-1B-Instruct | 8 / 11 | 91.8% | 96.7% | 62.5% | 37.5% | 8/8 |
+| SmolLM2-1.7B-Instruct | 17 / 12 | 93.6% | 100.0% | 50.0% | 37.5% | 8/8 |
+
+Selected-layer PCA cumulative variance after two components was 7.3% for Qwen, 7.5% for OLMo, and 8.3% for SmolLM2. These values describe the representation geometry; they are not accuracy scores.
+
+### Individual-plan coverage
+
+| Planned component | Status | Evidence |
+|---|---|---|
+| Three-model comparison | Complete with documented substitution | Qwen, OLMo, and SmolLM2 cache, layer, PCA, and probe tables; SmolLM2 replaces the gated/unavailable Moonlight comparison |
+| Single-turn grouped train/validation/test evaluation | Complete | 200 records, split 140/30/30, with leakage checks |
+| Multi-turn escalation and matched controls | Complete | 4 escalation conversations plus 4 controls, four turns each |
+| PCA reference space and centroid analysis | Complete | `pca_variance_*.csv`, `pca_centroids_*.csv`, notebook Figures 2 and 7 |
+| MLP and linear probe analysis | Complete | `probe_single_turn_*.csv`, `probe_multi_turn_*.csv` |
+| Text-only judge comparison | Complete | 32 judge turn rows and `comparison_*.csv` / `summary_*.csv` |
+| Reproducible prompts and configuration | Complete | Frozen prompt hash in `configs/experiment.yaml` |
+| Paper-style visual reporting | Complete | `notebooks/all_models_paper_analysis.ipynb` |
+| Rerun weak or ambiguous cases | Not performed | Results are locked as an exploratory pilot; no additional seeds or adaptive conversations were run |
+| Final presentation and blog | Not in repository | Required by the individual plan but remains a writing deliverable |
+
+The core analysis is complete. Remaining work is interpretation, review of ambiguous cases, and the presentation/blog deliverables—not another required model run. The pilot is limited by four escalation conversations, four controls, prewritten rather than adaptive turns, and a local supplementary judge. It does not support broad claims of generalization or robustness.
+
+### Judge prompts and inputs
+
+The optional text-only judge reads every conversation from `data/multi_turn/*.jsonl` and `data/controls/*.jsonl`, including the four escalation conversations and their four matched controls in the current pilot. For each turn, it sends the full conversation history through the current turn to the judge, then sends the first verdict for review.
+
+The judge prompts are:
+
+- `prompts/judge_v1.md`: escalation-monitor instructions and JSON verdict format.
+- `prompts/judge_v1_review.md`: second-pass verdict review instructions.
+
+Judge outputs are written to `results/tables/judge_turns.jsonl`. The judge does not read PCA files, probe activations, or single-turn reference records.
 
 ### Preliminary Qwen fixture results
 
@@ -94,7 +134,7 @@ The notebook writes these visualizations from the completed Qwen fixture tables:
 - [Paper-style condition comparison](results/figures/qwen_paper_condition_comparison.png)
 - [Paper-style layer sensitivity](results/figures/qwen_paper_layer_sensitivity.png)
 
-### Next commands
+### Completed pipeline commands
 
 After `run_cache.py` completes the current reference run, run:
 
@@ -104,7 +144,9 @@ After `run_cache.py` completes the current reference run, run:
 .\.venv\Scripts\python.exe scripts\run_probe.py --model qwen2.5-3b
 ```
 
-The external judge is optional and requires a separately configured API-backed model. OLMo and SmolLM2 are secondary comparisons.
+The text-only judge used the locally configured Ollama model `llama3.2:3b`.
+
+The all-models paper-style analysis notebook is [`notebooks/all_models_paper_analysis.ipynb`](notebooks/all_models_paper_analysis.ipynb). It produces indexed figures for single-turn accuracy, PCA variance and scatter geometry, context length, per-turn and category trajectories, condition/layer sensitivity, and probe-versus-judge comparison.
 
 ## Background
 

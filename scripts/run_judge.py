@@ -4,6 +4,8 @@ import argparse
 import json
 import logging
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from tqdm import tqdm
 
@@ -31,6 +33,38 @@ def anthropic_backend(model: str, max_tokens: int):
     return complete
 
 
+def ollama_backend(model: str, max_tokens: int, endpoint: str):
+    """Return a complete(system, user) callable backed by a local Ollama server."""
+
+    def complete(system: str, user: str) -> str:
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "stream": False,
+            "options": {"temperature": 0, "num_predict": max_tokens},
+        }
+        request = Request(
+            endpoint,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=600) as response:
+                result = json.load(response)
+        except (HTTPError, URLError, TimeoutError) as exc:
+            raise RuntimeError(f"Ollama request failed at {endpoint}: {exc}") from exc
+        try:
+            return result["message"]["content"]
+        except (KeyError, TypeError) as exc:
+            raise RuntimeError("Ollama returned no message content.") from exc
+
+    return complete
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     log = logging.getLogger(__name__)
@@ -42,12 +76,23 @@ def main() -> None:
     settings = cfg["judge"]
     if not settings["model"]:
         raise SystemExit("Set judge.model in configs/experiment.yaml before running the judge.")
+    backend = settings.get("backend", "anthropic")
+    if backend == "anthropic":
+        complete = anthropic_backend(settings["model"], settings["max_tokens"])
+    elif backend == "ollama":
+        complete = ollama_backend(
+            settings["model"],
+            settings["max_tokens"],
+            settings["endpoint"],
+        )
+    else:
+        raise SystemExit(f"Unsupported judge backend: {backend!r}. Use 'anthropic' or 'ollama'.")
     digest = prompt_hash(settings["prompt_file"], settings["review_prompt_file"])
     if settings["prompt_sha256"] and settings["prompt_sha256"] != digest:
         raise SystemExit("Judge prompt changed after it was frozen. Restore it or start a new prompt version.")
 
     judge = Judge(
-        anthropic_backend(settings["model"], settings["max_tokens"]),
+        complete,
         Path(settings["prompt_file"]).read_text(encoding="utf-8"),
         Path(settings["review_prompt_file"]).read_text(encoding="utf-8"),
     )

@@ -31,10 +31,11 @@ decision:
   conversation_share: 0.5       # share of flagged response tokens needed to flag a conversation
 
 judge:
-  backend: anthropic
-  model: null                   # must be set before running scripts/run_judge.py
+  backend: ollama
+  model: llama3.2:3b
+  endpoint: http://127.0.0.1:11434/api/chat
   max_tokens: 600
   prompt_file: prompts/judge_v1.md
   review_prompt_file: prompts/judge_v1_review.md
-  prompt_sha256: null           # written on first run, then enforced
+  prompt_sha256: 047a96d300b1d7d3bf97e302ea3c7285ea94871cbd2e887d6b148ca6ccea8da4
   flag_score_threshold: 50      # score at or above which a turn counts as flagged
