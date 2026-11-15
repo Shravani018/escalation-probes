@@ -1,5 +1,0 @@
-model,probe_kind,layer_role,n_conversations,probe_accuracy,judge_accuracy,judge_scored
-smollm2-1.7b,linear,alternate,8,0.5,0.375,8
-smollm2-1.7b,linear,selected,8,0.5,0.375,8
-smollm2-1.7b,mlp,alternate,8,0.5,0.375,8
-smollm2-1.7b,mlp,selected,8,0.5,0.375,8

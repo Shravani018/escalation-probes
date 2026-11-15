@@ -39,5 +39,7 @@ judge:
   max_tokens: 600
   prompt_file: prompts/judge_v1.md
   review_prompt_file: prompts/judge_v1_review.md
-  prompt_sha256: 047a96d300b1d7d3bf97e302ea3c7285ea94871cbd2e887d6b148ca6ccea8da4
+  prompt_sha256_qwen2.5-3b: 047a96d300b1d7d3bf97e302ea3c7285ea94871cbd2e887d6b148ca6ccea8da4
+  prompt_sha256_smollm2-1.7b: 047a96d300b1d7d3bf97e302ea3c7285ea94871cbd2e887d6b148ca6ccea8da4
+  prompt_sha256_olmo-2-1b: 047a96d300b1d7d3bf97e302ea3c7285ea94871cbd2e887d6b148ca6ccea8da4
   flag_score_threshold: 50      # score at or above which a turn counts as flagged

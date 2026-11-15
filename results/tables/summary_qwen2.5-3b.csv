@@ -1,5 +1,0 @@
-model,probe_kind,layer_role,n_conversations,probe_accuracy,judge_accuracy,judge_scored
-qwen2.5-3b,linear,alternate,8,0.625,0.375,8
-qwen2.5-3b,linear,selected,8,0.625,0.375,8
-qwen2.5-3b,mlp,alternate,8,0.75,0.375,8
-qwen2.5-3b,mlp,selected,8,0.75,0.375,8
