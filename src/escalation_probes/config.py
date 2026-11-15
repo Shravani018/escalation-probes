@@ -14,9 +14,13 @@ def load_yaml(path: str | Path) -> dict:
         return yaml.safe_load(handle)
 
 
-def load_experiment(path: str | Path = "configs/experiment.yaml") -> dict:
-    """Load the experiment config."""
-    return load_yaml(path)
+def load_experiment(path: str | Path = "configs/experiment.yaml", tag: str = "") -> dict:
+    """Load the experiment config; a tag points the conversation paths at a per-model folder."""
+    cfg = load_yaml(path)
+    if tag:
+        for key in ("multi_turn", "controls"):
+            cfg["paths"][key] = f"{cfg['paths'][key]}_{tag}"
+    return cfg
 
 
 def tables_dir(cfg: dict) -> Path:

@@ -50,6 +50,7 @@ def main() -> None:
     parser.add_argument("--model", required=True)
     parser.add_argument("--models-config", default="configs/models.yaml")
     parser.add_argument("--prompts-dir", type=Path, default=Path("data/prompts_v2"))
+    parser.add_argument("--data-tag", default="", help="Write to per-model folders, e.g. olmo-2-1b.")
     parser.add_argument("--backend", choices=("hf", "ollama"), default="hf")
     parser.add_argument("--ollama-model", default="qwen2.5:3b")
     parser.add_argument("--endpoint", default="http://127.0.0.1:11434/api/chat")
@@ -58,7 +59,8 @@ def main() -> None:
     args = parser.parse_args()
 
     prompts = load_dir(args.prompts_dir)
-    outputs = {label: Path(directory) / "generated.jsonl" for label, directory in DESTINATIONS.items()}
+    suffix = f"_{args.data_tag}" if args.data_tag else ""
+    outputs = {label: Path(f"{directory}{suffix}") / "generated.jsonl" for label, directory in DESTINATIONS.items()}
     done = set()
     for path in outputs.values():
         if path.exists():
