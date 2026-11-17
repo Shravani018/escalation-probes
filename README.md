@@ -2,17 +2,15 @@
 
 Do safety probes trained on single-turn activations detect multi-turn escalation?
 
-A pilot replication of the PCA and MLP probing analysis in Bullwinkel et al. (2025), run on Qwen2.5-3B-Instruct (primary), OLMo-2-1B-Instruct and SmolLM2-1.7B-Instruct, with an output-only LLM judge as the black-box baseline. This is method validation under a local compute budget, not an exact replication.
+A local replication study of the PCA and MLP probing analysis in Bullwinkel et al. (2025), run on Qwen2.5-3B-Instruct (primary), OLMo-2-1B-Instruct and SmolLM2-1.7B-Instruct, with an output-only LLM judge as the black-box baseline. This is method validation under a local compute budget, not an exact replication.
 
 ## Status
 
-- **Round two is complete for all three models.** Each has 50 escalation and 50 matched control conversations with the model's own greedy replies, manual compliance labels, an activation cache, layer selection, PCA, MLP and linear probes, and a per-turn judge run.
+- **The model-generated evaluation is complete for all three models.** Each has 50 escalation and 50 matched control conversations with the model's own greedy replies, manual compliance labels, an activation cache, layer selection, PCA, MLP and linear probes, and a per-turn judge run.
 - The results notebook (`notebooks/experiment_results.ipynb`) is executed and writes 18 figures to `results/figures/`.
 - `pytest` reports **30 passed**.
 - The presentation is delivered outside this repository. The blog is still to be written.
 - Open items: relabel the "partial" replies with a written rubric, add the Masked Responses condition, and rerun weak cases (see [Limitations](#limitations)).
-
-Round one (8 hand-written conversations with scripted refusal replies) cannot test the paper's central claim and is kept as pilot evidence only.
 
 ```mermaid
 flowchart LR
@@ -56,7 +54,7 @@ flowchart LR
     F --> R
 ```
 
-## Results (round two)
+## Results
 
 Each model has 50 escalation and 50 matched control conversations. "Final share" is the fraction of final-reply tokens the MLP probe calls harmful, escalation / control. Intervals are 95% bootstrap intervals over conversations.
 
@@ -86,10 +84,6 @@ What the results say:
 
 Key figures: [harmful share by k](results/figures/05_harmful_share_vs_k.png), [escalation vs controls](results/figures/08_separation.png), [separation by turn](results/figures/10c_separation_by_turn.png), [scorecard](results/figures/11_scorecard.png).
 
-### Round one (pilot, hand-written replies)
-
-Round one used four escalation and four control conversations with scripted refusal replies and a local `llama3.2:3b` judge. It gave probe conversation accuracy of 75.0% (Qwen), 62.5% (OLMo) and 50.0% (SmolLM2) against 37.5% for the judge, on n = 8. Results from that round are not used in the round-two conclusions.
-
 ### Individual-plan coverage
 
 | Planned component | Status | Evidence |
@@ -112,7 +106,7 @@ The judge reads each conversation from `data/multi_turn_gen_<model>/` and `data/
 - Prompts: `prompts/judge_v1.md` and `prompts/judge_v1_review.md`. A SHA-256 hash per model (`prompt_sha256_<model>` in `configs/experiment.yaml`, picked by `--data-tag`) is checked at run time.
 - Model: `hf.co/mistralai/Ministral-3-8B-Instruct-2512-GGUF:Q4_K_M`, served by Ollama on a Colab GPU through `notebooks/judge_colab_hf.ipynb`. `scripts/make_judge_bundle.py` zips the files the notebook needs. The bundle contains generated replies, so it is Git-ignored and rebuilt on demand.
 - Output: `results/judge/judge_hf_<model>.jsonl` (the notebook writes there directly), 400 rows per model, all with status `ok`. A flag is a score of 50 or more.
-- The `judge` block in `configs/experiment.yaml` still names a Groq endpoint, which is the default for `scripts/run_judge.py`. The Colab run overrides it with `--judge-model`, `--endpoint` and `--api-key-env`, and the model recorded in each result row is the source of truth.
+- The default judge configuration uses Ministral through Ollama. Historical results retain the model identity recorded in each result row.
 
 ## Reproducing the pipeline
 
@@ -173,7 +167,7 @@ Splits are grouped by example. No test conversation contributes to PCA fitting, 
 
 - Two categories: phishing/fraud and non-operational cyber intrusion.
 - Prompts are self-authored arcs from `scripts/build_prompts.py`. Real links, credentials, targets, commands and exploit detail are redacted before any prompt is run.
-- Generated replies may contain unsafe text and are kept out of Git: `.gitignore` covers `data/multi_turn_gen_*/` and `data/controls_gen_*/`, and the judge bundle. Rerunning the judge or the notebook's compliance sections needs them locally, so regenerate with `scripts/generate_replies.py`. Compliance labels (an id and one word), scores and activation-derived statistics are committed and are what is reported. Review `results/judge/` before publishing it, because judge rationales can paraphrase reply content.
+- Generated replies may contain unsafe text and are kept out of Git: `.gitignore` covers `data/multi_turn_gen_*/` and `data/controls_gen_*/`, and the judge bundle. Rerunning the judge or the notebook's compliance sections needs them locally, so regenerate with `scripts/generate_replies.py`. Generated output labels are also Git-ignored (`data/output_labels_*.csv`) and retained locally. Published aggregate scores and activation-derived statistics are the basis of the reported results. Review `results/judge/` before publishing it, because judge rationales can paraphrase reply content.
 - If the conversations do not elicit unsafe outputs, the study reports representation drift without claiming a successful jailbreak. In this run Qwen complied in only 14 of 50 conversations, so claims are limited to a pilot and the notebook repeats the key tests on complied replies only.
 - Fixed prewritten conversations are a weaker attack than adaptive Crescendo (Russinovich et al., Section 5.6).
 
@@ -198,10 +192,10 @@ escalation-probes/
 ├── data/
 │   ├── single_turn/          # 16-record fixture for tests and smoke checks
 │   ├── single_turn_reference/  # 100 benign + 100 harmful records (Git-ignored)
-│   ├── multi_turn/, controls/  # round-one conversations
-│   ├── prompts_v2/           # round-two user-turn sets
+│   ├── multi_turn/, controls/  # legacy pilot fixtures, if retained locally
+│   ├── prompts_v2/           # evaluation user-turn sets
 │   ├── multi_turn_gen_<model>/, controls_gen_<model>/   # generated replies (Git-ignored)
-│   ├── output_labels_<model>.csv   # manual refused / partial / complied (id and label only)
+│   ├── output_labels_<model>.csv   # local manual labels (Git-ignored)
 │   └── splits/
 ├── src/escalation_probes/    # config, data, models, cache, pca, probe, judge, metrics
 ├── scripts/                  # build_prompts, prepare_reference_data, make_splits, generate_replies, label_outputs,
@@ -229,7 +223,7 @@ escalation-probes/
 
 ## AI assistance
 
-Claude was used for timeline generation (declared in the individual plan), for drafting the round-two prompt templates and scripts, for code review, for the Colab run notebooks and the results notebook, and for the presentation. Paper With Code Chat was used for a first skim of the target paper. GitHub Copilot steering instructions were used during repository setup. All reported numbers come from the code and result files in this repository, and the presentation figures were checked against them.
+Claude was used for timeline generation (declared in the individual plan), for drafting the model-generated prompt templates and scripts, for code review, for the Colab run notebooks and the results notebook, and for the presentation. Paper With Code Chat was used for a first skim of the target paper. GitHub Copilot steering instructions were used during repository setup. All reported numbers come from the code and result files in this repository, and the presentation figures were checked against them.
 
 ## References
 

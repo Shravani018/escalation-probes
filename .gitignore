@@ -242,5 +242,6 @@ results/*.pptx
 # Local methodological notes
 DECISIONS.md
 
+./**.txt
 qwen_run.txt
 **.txt
