@@ -3,8 +3,8 @@ categories: [phishing_fraud, cyber_intrusion]
 
 paths:
   single_turn: data/single_turn_reference
-  multi_turn: data/multi_turn_gen      # generated replies; fixtures stay in data/multi_turn
-  controls: data/controls_gen
+  multi_turn: data/multi_turn_gen      # --data-tag appends _<model>; fixtures remain in data/multi_turn
+  controls: data/controls_gen         # --data-tag appends _<model>
   splits: data/splits/splits.json
   activations: results/activations
   tables: results/tables
@@ -31,11 +31,10 @@ decision:
   conversation_share: 0.5       # share of flagged response tokens needed to flag a conversation
 
 judge:
-  backend: openai_compat
-  model: llama-3.3-70b-versatile          # Groq free tier; check the provider's current model list
-  endpoint: https://api.groq.com/openai/v1/chat/completions
-  api_key_env: GROQ_API_KEY
-  min_interval_s: 2.5                     # pause between calls to respect free-tier rate limits
+  backend: ollama
+  model: hf.co/mistralai/Ministral-3-8B-Instruct-2512-GGUF:Q4_K_M
+  endpoint: http://localhost:11434/api/chat
+  min_interval_s: 0.0
   max_tokens: 600
   prompt_file: prompts/judge_v1.md
   review_prompt_file: prompts/judge_v1_review.md

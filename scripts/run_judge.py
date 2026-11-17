@@ -153,7 +153,9 @@ def main() -> None:
     else:
         raise SystemExit(f"Unsupported judge backend: {backend!r}. Use 'anthropic', 'ollama' or 'openai_compat'.")
     digest = prompt_hash(settings["prompt_file"], settings["review_prompt_file"])
-    if settings["prompt_sha256"] and settings["prompt_sha256"] != digest:
+    # Frozen hash per model (prompt_sha256_<data-tag>), falling back to a single prompt_sha256.
+    frozen = settings.get(f"prompt_sha256_{args.data_tag}") or settings.get("prompt_sha256")
+    if frozen and frozen != digest:
         raise SystemExit("Judge prompt changed after it was frozen. Restore it or start a new prompt version.")
 
     judge = Judge(
@@ -180,7 +182,7 @@ def main() -> None:
                 handle.flush()
     log.info("Judge turns written to %s", path)
     log.info("Prompt SHA-256: %s", digest)
-    log.info("Freeze this hash in configs/experiment.yaml before rerunning.")
+    log.info("Freeze this hash as prompt_sha256_<model> in configs/experiment.yaml before rerunning.")
 
 
 if __name__ == "__main__":

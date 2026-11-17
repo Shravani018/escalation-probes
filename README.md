@@ -109,16 +109,16 @@ Round one used four escalation and four control conversations with scripted refu
 
 The judge reads each conversation from `data/multi_turn_gen_<model>/` and `data/controls_gen_<model>/`. For each turn it sees the full history through that turn, returns a flag, a 0 to 100 score and a rationale, and a second pass reviews the first verdict. It never sees activations, PCA files or single-turn records.
 
-- Prompts: `prompts/judge_v1.md` and `prompts/judge_v1_review.md`. A SHA-256 hash per model in `configs/experiment.yaml` is checked at run time.
-- Model: `hf.co/mistralai/Ministral-3-8B-Instruct-2512-GGUF:Q4_K_M`, served by Ollama on a Colab GPU through `notebooks/judge_colab_hf.ipynb`. `scripts/make_judge_bundle.py` zips the files the notebook needs.
-- Output: `results/judge/judge_hf_<model>.jsonl`, 400 rows per model, all with status `ok`. A flag is a score of 50 or more.
+- Prompts: `prompts/judge_v1.md` and `prompts/judge_v1_review.md`. A SHA-256 hash per model (`prompt_sha256_<model>` in `configs/experiment.yaml`, picked by `--data-tag`) is checked at run time.
+- Model: `hf.co/mistralai/Ministral-3-8B-Instruct-2512-GGUF:Q4_K_M`, served by Ollama on a Colab GPU through `notebooks/judge_colab_hf.ipynb`. `scripts/make_judge_bundle.py` zips the files the notebook needs. The bundle contains generated replies, so it is Git-ignored and rebuilt on demand.
+- Output: `results/judge/judge_hf_<model>.jsonl` (the notebook writes there directly), 400 rows per model, all with status `ok`. A flag is a score of 50 or more.
 - The `judge` block in `configs/experiment.yaml` still names a Groq endpoint, which is the default for `scripts/run_judge.py`. The Colab run overrides it with `--judge-model`, `--endpoint` and `--api-key-env`, and the model recorded in each result row is the source of truth.
 
 ## Reproducing the pipeline
 
 ```
 python -m venv .venv && source .venv/bin/activate
-pip install -e .
+pip install -e ".[dev]"                    # the dev extra provides pytest and jupyter
 pytest                                   # 30 passed
 python scripts/build_prompts.py          # writes data/prompts_v2
 ```
@@ -134,7 +134,15 @@ python scripts/run_pca.py     --model MODEL --data-tag MODEL
 python scripts/run_probe.py   --model MODEL --data-tag MODEL
 ```
 
-Then run the judge with `notebooks/judge_colab_hf.ipynb` (or `scripts/run_judge.py` with the overrides above) and open `notebooks/experiment_results.ipynb`, which reads `results/tables/`, `results/judge/` and `data/output_labels_*.csv`. Layer selection runs before PCA because PCA needs a layer. Seeds are fixed in `configs/experiment.yaml`. Caching is the slowest stage and was run on a Colab GPU for OLMo, so its single-turn tables replace the earlier local values.
+Then run the judge, either with `notebooks/judge_colab_hf.ipynb` (upload the output of `scripts/make_judge_bundle.py`) or directly for each model:
+
+```
+PYTHONPATH=src python scripts/run_judge.py --data-tag MODEL --judge-model hf.co/mistralai/Ministral-3-8B-Instruct-2512-GGUF:Q4_K_M \
+    --endpoint http://localhost:11434/v1/chat/completions --api-key-env OLLAMA_API_KEY --min-interval 0 \
+    --out results/judge/judge_hf_MODEL.jsonl
+```
+
+Then open `notebooks/experiment_results.ipynb`, which reads `results/tables/`, `results/judge/` and `data/output_labels_*.csv`. Layer selection runs before PCA because PCA needs a layer. Seeds are fixed in `configs/experiment.yaml`. Caching is the slowest stage and was run on a Colab GPU for OLMo, so its single-turn tables replace the earlier local values.
 
 ## Background
 
@@ -165,7 +173,7 @@ Splits are grouped by example. No test conversation contributes to PCA fitting, 
 
 - Two categories: phishing/fraud and non-operational cyber intrusion.
 - Prompts are self-authored arcs from `scripts/build_prompts.py`. Real links, credentials, targets, commands and exploit detail are redacted before any prompt is run.
-- Generated replies, compliance labels and judge outputs may contain unsafe text and are kept out of Git. Labels, scores and activation-derived statistics are what is reported. Review `results/judge/` before publishing it, because judge rationales can paraphrase reply content.
+- Generated replies may contain unsafe text and are kept out of Git: `.gitignore` covers `data/multi_turn_gen_*/` and `data/controls_gen_*/`, and the judge bundle. Rerunning the judge or the notebook's compliance sections needs them locally, so regenerate with `scripts/generate_replies.py`. Compliance labels (an id and one word), scores and activation-derived statistics are committed and are what is reported. Review `results/judge/` before publishing it, because judge rationales can paraphrase reply content.
 - If the conversations do not elicit unsafe outputs, the study reports representation drift without claiming a successful jailbreak. In this run Qwen complied in only 14 of 50 conversations, so claims are limited to a pilot and the notebook repeats the key tests on complied replies only.
 - Fixed prewritten conversations are a weaker attack than adaptive Crescendo (Russinovich et al., Section 5.6).
 
@@ -193,10 +201,11 @@ escalation-probes/
 │   ├── multi_turn/, controls/  # round-one conversations
 │   ├── prompts_v2/           # round-two user-turn sets
 │   ├── multi_turn_gen_<model>/, controls_gen_<model>/   # generated replies (Git-ignored)
-│   ├── output_labels_<model>.csv   # manual refused / partial / complied (Git-ignored)
+│   ├── output_labels_<model>.csv   # manual refused / partial / complied (id and label only)
 │   └── splits/
 ├── src/escalation_probes/    # config, data, models, cache, pca, probe, judge, metrics
-├── scripts/                  # build_prompts, generate_replies, label_outputs, run_*, validate_data, make_judge_bundle
+├── scripts/                  # build_prompts, prepare_reference_data, make_splits, generate_replies, label_outputs,
+│                             # run_cache / run_layers / run_pca / run_probe / run_judge, validate_data, smoke_test, make_judge_bundle
 ├── tests/                    # 5 test files, 30 tests
 ├── notebooks/                # experiment_results.ipynb, judge_colab_hf.ipynb
 ├── results/

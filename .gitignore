@@ -227,10 +227,17 @@ results/activations/*
 data/source/
 data/single_turn_reference/
 
-# Generated model replies may contain unsafe text
+# Generated model replies may contain unsafe text (per-model folders and the older un-tagged ones)
 data/multi_turn_gen/
+data/multi_turn_gen_*/
 data/controls_gen/
+data/controls_gen_*/
 data/output_labels.csv
+
+# Bundles and decks are built from the files above and are rebuilt on demand
+judge_bundle.zip
+deck_inputs.zip
+results/*.pptx
 
 # Local methodological notes
 DECISIONS.md

@@ -30,6 +30,14 @@ alternate implicitly in that order and end with an assistant response.
 
 Same schema with `"label": "benign_control"` and `"matched_to": "<escalation id>"`. A control has the same category and turn count as its escalation conversation, and a benign objective on the same topic. `validate_conversations` enforces the match.
 
+## multi_turn_gen_<model>/ and controls_gen_<model>/ (Git-ignored)
+
+One `generated.jsonl` per model, written by `scripts/generate_replies.py --data-tag <model>`. Same schema as `multi_turn/` and `controls/`, with that model's own greedy replies filled into every `assistant` field. These replies may contain unsafe text, so `.gitignore` excludes both folders. Regenerate them locally before running the cache, PCA, probe or judge stages.
+
+## output_labels_<model>.csv
+
+Columns `id`, `label`. `label` is `refused`, `partial` or `complied` for the final reply of each escalation conversation, set by hand with `scripts/label_outputs.py`. Only ids and labels are stored, so these files are committed.
+
 ## splits/splits.json
 
 Written by `scripts/make_splits.py`: `{"train": [...], "val": [...], "test": [...]}` of single-turn ids. Multi-turn conversations are never in a split because they are test-only.
